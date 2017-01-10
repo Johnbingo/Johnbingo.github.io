@@ -102,7 +102,7 @@ wine install1234sudo add-apt-repository ppa:ubuntu-wine/ppasudo apt-get updatesu
  Configuring ttf-mscorefonts-installer  
 
 用">
-<meta property="og:updated_time" content="2017-01-06T09:52:21.181Z">
+<meta property="og:updated_time" content="2017-01-09T09:59:52.111Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="揭秘家用路由器0day漏洞挖掘技术">
 <meta name="twitter:description" content="环境准备工具binwalk  
@@ -342,6 +342,30 @@ wine install1234sudo add-apt-repository ppa:ubuntu-wine/ppasudo apt-get updatesu
 <p>用Tab解决</p>
 <p>qemu install<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">git <span class="built_in">clone</span> git://git.qemu-project.org/qemu.git</div><div class="line"><span class="built_in">cd</span> qemu</div><div class="line">git submodule update --init pixman</div><div class="line">git submodule update --init dtc</div><div class="line">sudo apt-get update</div><div class="line">sudo apt-get install libglib2.0 libglib2-dev</div><div class="line">sudo apt-get install autoconf automake libtool</div><div class="line"><span class="built_in">cd</span> opt/qemu/linux-user</div><div class="line">sudo nano elfload.c</div><div class="line">sudo ./configure --static&amp;&amp;sudo make &amp;&amp; sudo make install</div></pre></td></tr></table></figure></p>
 <p>buildroot install<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"> wget http://buildroot.net/downloads/snapshots/buildroot-snapshot.tar.bz2</div><div class="line"> tar -jxvf buildroot-snapshot</div><div class="line"> cd buildroot</div><div class="line"> sudo apt-get install libncurses5-dev patch</div><div class="line"> make clean</div><div class="line"> make menuconfig</div><div class="line"> sudo gedit /etc/environment</div><div class="line"> :/home/router/Desktop/buildroot/output/host/usr/bin</div><div class="line">source /etc/environment</div><div class="line">mips-linux-gcc --version</div></pre></td></tr></table></figure></p>
+<p> Mips 系统网络配置  </p>
+<ol>
+<li><p>获取安装依赖文件  </p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sudo apt-get install uml-utilities bridge-utils</div></pre></td></tr></table></figure>
+</li>
+<li><p>修改Ubuntu 主机网络配置  </p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">sudo nano /etc/network/interfaces</div><div class="line">auto lo</div><div class="line">iface lo inet loopback</div><div class="line">auto ens33</div><div class="line">iface ens33 inet dhcp</div><div class="line"><span class="comment">#auto br0</span></div><div class="line">iface br0 inet dhcp</div><div class="line"> bridge_ports ens33</div><div class="line"> bridge_maxwait 0</div></pre></td></tr></table></figure>
+</li>
+<li><p>创建QEMU网络接口启动脚本</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">sudo nano /etc/qemu-ifup</div><div class="line"><span class="meta">#!/bin/sh</span></div><div class="line"><span class="built_in">echo</span> <span class="string">"Executing /etc/qemu-ifup"</span></div><div class="line"><span class="built_in">echo</span> <span class="string">"Bringing up <span class="variable">$1</span> for bridged mode..."</span></div><div class="line">sudo /sbin/ifconfig <span class="variable">$1</span> 0.0.0.0 promisc up</div><div class="line"><span class="built_in">echo</span> <span class="string">"Adding <span class="variable">$1</span> to br0..."</span></div><div class="line">sudo /sbin/brctl addif br0 <span class="variable">$1</span></div><div class="line">sleep 2</div></pre></td></tr></table></figure>
+</li>
+<li><p>修改qemu-ifup 权限</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">sudo chmod a+x /etc/qemu-ifup</div><div class="line">sudo /etc/init.d/networking restart</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<ol>
+<li>qemu 启动设置<br>启用桥接网络<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">sudo ifdown ens33</div><div class="line">sudo ifup br0</div><div class="line">cat /etc/debian_version</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<ul>
+<li><a href="https://people.debian.org/~aurel32/qemu/mips/" target="_blank" rel="external">下载MIPS虚拟机</a></li>
+<li>启动MIPS 虚拟机<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sudo qemu-system-mips -kernel vmlinux-2.6.3-2-5-4kc-malta -hda debian_wheezy_mips_standard.qcow2 -append <span class="string">"root=/dev/sda1 console=ttyS0"</span> -net nic,macaddr=00:16:3e:00:00:01 -net tap -nographic</div></pre></td></tr></table></figure>
+</li>
+</ul>
 <h2 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h2><p><a href="http://blog.csdn.net/zdhliang/article/details/8518121" target="_blank" rel="external">buildroot01</a><br><a href="http://www.rosoo.net/a/201005/9362.html" target="_blank" rel="external">buildroot02</a><br><a href="http://www.freebuf.com/articles/wireless/14964.html" target="_blank" rel="external">反编译D-Link路由器固件程序</a><br><a href="http://www.freebuf.com/articles/terminal/113487.html" target="_blank" rel="external"><br>D-Link路由器固件后门，导致内网域名劫持 </a><br><a href="http://www.freebuf.com/sectool/75915.html" target="_blank" rel="external">逆向路由器固件之解包 Part1 </a><br><a href="http://www.freebuf.com/articles/terminal/76481.html" target="_blank" rel="external">http://www.freebuf.com/articles/terminal/76481.html</a><br><a href="http://www.freebuf.com/vuls/76755.html" target="_blank" rel="external"><br>逆向路由器固件之SQL注入（Part3)</a><br><a href="http://www.freebuf.com/articles/terminal/48176.html" target="_blank" rel="external"><br>Cisco Linksys无线路由固件安全分析与后门研究</a><br><a href="http://www.freebuf.com/sectool/15266.html" target="_blank" rel="external"><br>Binwalk：后门（固件）分析利器 </a><br><a href="http://bobao.360.cn/snapshot/index?id=86416" target="_blank" rel="external">    爱快流控路由最新版(iKuai8_2.4.4_Build20150604-17_41)固件漏洞挖掘分析之一 </a><br><a href="http://bobao.360.cn/snapshot/index?id=86793" target="_blank" rel="external">爱快流控路由最新版(iKuai8_2.4.4_Build20150604-17_41)固件漏洞挖掘分析之二 </a><br><a href="http://bobao.360.cn/snapshot/index?id=86790" target="_blank" rel="external">爱快流控路由最新版(iKuai8_2.4.4_Build20150604-17_41)固件漏洞挖掘分析之三 </a><br><a href="ftp://ftp.dlink.eu/Products/dir/dir-100/driver_software/" target="_blank" rel="external">dlink固件</a></p>
 
       
@@ -375,8 +399,8 @@ wine install1234sudo add-apt-repository ppa:ubuntu-wine/ppasudo apt-get updatesu
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2017/01/04/hexo-conclusion/" rel="next" title="hexo 小结">
-                <i class="fa fa-chevron-left"></i> hexo 小结
+              <a href="/2017/01/04/hello-2017/" rel="next" title="Hello 2017">
+                <i class="fa fa-chevron-left"></i> Hello 2017
               </a>
             
           </div>
@@ -385,8 +409,8 @@ wine install1234sudo add-apt-repository ppa:ubuntu-wine/ppasudo apt-get updatesu
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2017/01/06/揭秘家用路由器0day漏洞挖掘技术02/" rel="prev" title="揭秘家用路由器0day漏洞挖掘技术02">
-                揭秘家用路由器0day漏洞挖掘技术02 <i class="fa fa-chevron-right"></i>
+              <a href="/2017/01/04/hexo-conclusion/" rel="prev" title="hexo 小结">
+                hexo 小结 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -457,7 +481,7 @@ wine install1234sudo add-apt-repository ppa:ubuntu-wine/ppasudo apt-get updatesu
           
             <div class="site-state-item site-state-posts">
               <a href="/archives">
-                <span class="site-state-item-count">4</span>
+                <span class="site-state-item-count">5</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -468,7 +492,7 @@ wine install1234sudo add-apt-repository ppa:ubuntu-wine/ppasudo apt-get updatesu
           
             <div class="site-state-item site-state-tags">
               <a href="/tags">
-                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-count">3</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
